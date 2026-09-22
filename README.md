@@ -18,6 +18,7 @@ VizML 是一个面向机器学习教学与交互演示的 Web 应用。项目使
 - 展示训练集/测试集指标、预测结果和混淆矩阵；
 - 线性回归提供“引导学习 / 自由实验”双模式，可分步探索斜率与截距、残差、损失地形、梯度下降和泛化；
 - 线性回归自由实验支持上传 `.xlsx`、预览工作表、自定义选择多个特征和目标列；
+- 逻辑回归提供可回放的梯度下降、概率地形、动态分类阈值和混淆矩阵；
 - 可视化二维分类决策边界、支持向量、近邻和决策路径；
 - 单步观察 K-Means、DBSCAN、神经网络与 SGD 的训练过程；
 - 比较聚类、降维和 SGD 优化器；
@@ -28,7 +29,7 @@ VizML 是一个面向机器学习教学与交互演示的 Web 应用。项目使
 
 | 类别 | 算法与能力 |
 | --- | --- |
-| 分类 | 支持向量机（SVM）、K 近邻（KNN）、决策树、高斯朴素贝叶斯 |
+| 分类 | 逻辑回归、支持向量机（SVM）、K 近邻（KNN）、决策树、高斯朴素贝叶斯 |
 | 回归 | 线性回归、岭回归、Lasso、多项式回归、正规方程、SGD 回归 |
 | 聚类 | K-Means、DBSCAN、层次聚类、高斯混合模型（GMM） |
 | 神经网络 | 单层感知机、MLP 分类、训练历史和分步训练 |
@@ -149,6 +150,7 @@ python app.py
 | 页面 | 地址 |
 | --- | --- |
 | 线性回归 | `/html/linear_regression.html` |
+| 逻辑回归 | `/html/logistic_regression.html` |
 | SGD | `/html/sgd.html` |
 | SVM | `/html/svm.html` |
 | KNN | `/html/knn.html` |
@@ -192,6 +194,7 @@ VizML/
 │       ├── decision_tree.py
 │       ├── bayesian_classification.py
 │       ├── linear_regression.py
+│       ├── logistic_regression.py
 │       ├── sgd.py
 │       ├── clustering.py
 │       ├── neural_network.py
@@ -311,6 +314,7 @@ curl -X POST http://localhost:5432/api/svm/predict \
 | 聚类 | `POST /api/clustering/dbscan/debug_step` | 执行 DBSCAN 单步 |
 | 聚类 | `GET /api/clustering/debug_state/<debug_key>` | 查询聚类调试状态 |
 | 分类 | `POST /api/svm/train`、`POST /api/svm/predict` | SVM 训练与预测 |
+| 分类 | `POST /api/logistic_regression/train` | 逻辑回归训练、检查点与阈值诊断数据 |
 | 分类 | `POST /api/knn/train`、`POST /api/knn/predict` | KNN 训练与预测 |
 | 分类 | `POST /api/decision_tree/train`、`POST /api/decision_tree/predict` | 决策树训练与预测 |
 | 分类 | `POST /api/decision_tree/decision_path` | 查询样本决策路径 |
@@ -371,9 +375,12 @@ class NewAlgorithm(BaseClassificationAlgorithm):
 
 ## 开发与验证
 
-仓库目前没有配置自动化测试、代码格式化或 lint 命令。修改后至少建议执行：
+仓库在 `tests/` 中提供核心实验的 `unittest` 回归测试。修改后建议执行：
 
 ```bash
+# 运行回归测试
+python -m unittest discover -s tests -v
+
 # 检查 Python 文件是否存在语法错误
 python -m compileall app.py backend
 

@@ -4,6 +4,7 @@
 
     const pages = {
         linear_regression: ['监督学习', '线性回归'],
+        logistic_regression: ['监督学习', '逻辑回归决策实验室'],
         sgd: ['优化算法', 'SGD 优化器'],
         svm: ['监督学习', '支持向量机'],
         knn: ['监督学习', 'K 近邻'],

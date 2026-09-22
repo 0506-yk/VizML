@@ -35,6 +35,7 @@ from backend.algorithms.bayesian_classification import BayesianClassificationAlg
 from backend.algorithms.linear_regression import LinearRegressionAlgorithm
 from backend.algorithms.sgd import SGDAlgorithm
 from backend.algorithms.reinforcement_learning import ReinforcementLearningAlgorithm, build_environment
+from backend.algorithms.logistic_regression import LogisticRegressionAlgorithm
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -72,6 +73,7 @@ bayesian_alg = BayesianClassificationAlgorithm()
 linear_regression_alg = LinearRegressionAlgorithm()
 sgd_alg = SGDAlgorithm()
 rl_alg = ReinforcementLearningAlgorithm()
+logistic_regression_alg = LogisticRegressionAlgorithm()
 
 
 @app.route('/')
@@ -2426,6 +2428,39 @@ def not_found(error):
 def internal_error(error):
     return jsonify({'status': 'error', 'message': '服务器内部错误'}), 500
 
+
+
+# ================== 逻辑回归 API ==================
+
+@app.route('/api/logistic_regression/train', methods=['POST'])
+def logistic_regression_train():
+    """训练二分类逻辑回归，并返回可回放的梯度下降过程。"""
+    try:
+        config = request.get_json(silent=True) or {}
+        session_key = config.get('session_key')
+        if session_key not in session_data['datasets']:
+            return jsonify({'status': 'error', 'message': '数据未找到，请先生成数据'}), 400
+
+        dataset = session_data['datasets'][session_key]
+        X = np.asarray(dataset.get('X'), dtype=float)
+        y = np.asarray(dataset.get('y'), dtype=int)
+        params = config.get('params') or {}
+        result = logistic_regression_alg.train(
+            X,
+            y,
+            epochs=max(50, min(int(params.get('epochs', 400)), 2000)),
+            learning_rate=max(0.005, min(float(params.get('learning_rate', 0.12)), 1.0)),
+            regularization=max(0.0, min(float(params.get('regularization', 0.01)), 2.0)),
+            test_size=max(0.15, min(float(params.get('test_size', 0.25)), 0.4)),
+            random_state=int(params.get('random_state', 42)),
+        )
+        return jsonify({'status': 'success', 'results': result})
+    except (TypeError, ValueError) as error:
+        logger.warning(f"Logistic regression validation error: {error}")
+        return jsonify({'status': 'error', 'message': str(error)}), 400
+    except Exception as error:
+        logger.exception("Logistic regression training failed")
+        return jsonify({'status': 'error', 'message': '逻辑回归训练失败'}), 500
 
 
 # ================== 强化学习 API (Q-Learning 网格世界) ==================

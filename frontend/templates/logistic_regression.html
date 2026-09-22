@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="交互式逻辑回归实验室：观察 Sigmoid 概率、交叉熵、决策阈值与分类指标。">
+  <title>逻辑回归决策实验室 · VizML</title>
+  <link rel="stylesheet" href="/static/css/design-system.css">
+  <link rel="stylesheet" href="/static/css/logistic-regression.css">
+  <script defer src="/static/vendor/chart.umd.min.js"></script>
+  <script defer src="/static/js/ui-shell.js"></script>
+  <script defer src="/static/js/logistic-regression.js"></script>
+</head>
+<body class="viz-algorithm-page lr-page">
+  <main class="lr-shell">
+    <header class="lr-hero">
+      <div>
+        <span class="lr-kicker">PROBABILITY CLASSIFIER / 12</span>
+        <h1>一条边界，如何变成<span>分类概率？</span></h1>
+        <p>从线性打分到 Sigmoid 概率，逐轮观察交叉熵下降；移动决策阈值，理解准确率、精确率与召回率之间的取舍。</p>
+      </div>
+      <div class="lr-equation" aria-label="逻辑回归概率公式"><small>MODEL</small><strong>p(y=1|x) = σ(wᵀx+b)</strong><span>0</span><i></i><span>0.5</span><i></i><span>1</span></div>
+    </header>
+
+    <div class="lr-workbench">
+      <aside class="lr-sidebar">
+        <section class="lr-panel lr-controls" aria-labelledby="setupTitle">
+          <div class="lr-heading"><div><span class="lr-kicker">EXPERIMENT / 01</span><h2 id="setupTitle">实验设置</h2></div><span class="lr-step">01</span></div>
+          <label for="dataset">数据形状</label>
+          <select id="dataset"><option value="blobs">线性可分</option><option value="moons">月牙形</option><option value="circles">同心圆</option><option value="xor">XOR 挑战</option></select>
+          <p class="lr-field-help" id="datasetHint">适合线性分类器，通常能学到清晰边界。</p>
+          <div class="lr-divider"></div>
+          <div class="lr-control"><div><label for="samples">样本数</label><output id="samplesValue">240</output></div><input id="samples" type="range" min="100" max="500" step="20" value="240"></div>
+          <div class="lr-control"><div><label for="noise">噪声</label><output id="noiseValue">0.16</output></div><input id="noise" type="range" min="0.02" max="0.45" step="0.01" value="0.16"></div>
+          <div class="lr-control"><div><label for="epochs">训练轮数</label><output id="epochsValue">400</output></div><input id="epochs" type="range" min="100" max="1200" step="50" value="400"></div>
+          <details class="lr-advanced"><summary>优化参数 <span>Gradient Descent</span></summary>
+            <div class="lr-control"><div><label for="learningRate">学习率 η</label><output id="learningRateValue">0.12</output></div><input id="learningRate" type="range" min="0.01" max="0.5" step="0.01" value="0.12"></div>
+            <div class="lr-control"><div><label for="regularization">L2 正则 λ</label><output id="regularizationValue">0.01</output></div><input id="regularization" type="range" min="0" max="0.5" step="0.01" value="0.01"></div>
+          </details>
+          <button id="trainButton" class="lr-primary" type="button"><span>生成数据并训练</span><span aria-hidden="true">↗</span></button>
+          <div id="status" class="lr-status" role="status" aria-live="polite">参数已就绪。点击开始实验。</div>
+        </section>
+        <section class="lr-concept"><span>WHY</span><p>选择“月牙形”或“同心圆”，可以看到线性模型的能力边界：训练更久也无法拟合弯曲决策边界。</p></section>
+      </aside>
+
+      <div class="lr-content">
+        <section class="lr-panel lr-boundary-panel" aria-labelledby="boundaryTitle">
+          <div class="lr-heading lr-heading--wide">
+            <div><span class="lr-kicker">DECISION SPACE / 02</span><h2 id="boundaryTitle">概率地形与决策边界</h2><p>背景颜色表示 P(y=1)，虚线是当前阈值对应的边界。</p></div>
+            <div class="lr-legend"><span><i class="class-zero"></i>类别 0</span><span><i class="class-one"></i>类别 1</span><span><i class="test-point"></i>测试集</span></div>
+          </div>
+          <div class="lr-canvas-wrap"><canvas id="boundaryCanvas" aria-label="逻辑回归概率地形、样本与决策边界"></canvas><div id="emptyBoundary" class="lr-empty"><strong>等待训练</strong><span>完成实验后，这里会显示概率地形与分类边界</span></div></div>
+          <div class="lr-boundary-controls">
+            <div class="lr-threshold"><div><label for="threshold">决策阈值</label><output id="thresholdValue">0.50</output></div><input id="threshold" type="range" min="0.1" max="0.9" step="0.01" value="0.5" disabled><p>概率 ≥ 阈值判为类别 1。调高阈值通常提高精确率、降低召回率。</p></div>
+            <div class="lr-playback"><span id="epochLabel">尚未训练</span><input id="epochSlider" type="range" min="0" max="0" value="0" disabled aria-label="选择训练检查点"><button id="playButton" type="button" disabled>▶ <span>播放学习过程</span></button></div>
+          </div>
+        </section>
+
+        <section class="lr-metric-row" aria-label="测试集分类指标">
+          <article class="lr-metric lr-metric--accent"><span>Accuracy</span><strong id="accuracy">—</strong><small>整体预测正确比例</small></article>
+          <article class="lr-metric"><span>Precision</span><strong id="precision">—</strong><small>判为正类中有多少正确</small></article>
+          <article class="lr-metric"><span>Recall</span><strong id="recall">—</strong><small>真实正类中找回多少</small></article>
+          <article class="lr-metric"><span>ROC AUC</span><strong id="auc">—</strong><small>不依赖单一阈值的排序能力</small></article>
+        </section>
+
+        <div class="lr-analysis-grid">
+          <section class="lr-panel lr-loss" aria-labelledby="lossTitle">
+            <div class="lr-heading lr-heading--wide"><div><span class="lr-kicker">OPTIMIZATION / 03</span><h2 id="lossTitle">交叉熵如何收敛</h2><p>对比训练集和测试集损失，识别收敛与过拟合。</p></div><span id="lossBadge" class="lr-badge">LOSS —</span></div>
+            <div class="lr-chart-wrap"><canvas id="lossChart" aria-label="训练集和测试集交叉熵曲线"></canvas><div id="emptyChart" class="lr-empty"><span>训练后显示损失曲线</span></div></div>
+          </section>
+          <section class="lr-panel lr-diagnostics" aria-labelledby="diagnosticsTitle">
+            <div class="lr-heading"><div><span class="lr-kicker">DIAGNOSTICS / 04</span><h2 id="diagnosticsTitle">阈值诊断</h2></div><span class="lr-step">CM</span></div>
+            <div class="lr-matrix" aria-label="测试集混淆矩阵">
+              <span></span><b>预测 0</b><b>预测 1</b>
+              <b>真实 0</b><strong id="tn">—</strong><strong id="fp">—</strong>
+              <b>真实 1</b><strong id="fn">—</strong><strong id="tp" class="is-hit">—</strong>
+            </div>
+            <div class="lr-formula"><span>当前模型</span><code id="modelFormula">z = w₁x₁ + w₂x₂ + b</code></div>
+            <p id="insight" class="lr-insight">训练后会根据结果解释模型表现。</p>
+          </section>
+        </div>
+
+        <footer class="lr-method"><span>核心更新</span><p><code>w ← w − η∇L(w)</code>。交叉熵会重罚“非常自信但判断错误”的样本；L2 正则通过限制权重大小，让边界更稳定。</p></footer>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
