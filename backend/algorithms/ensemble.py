@@ -437,8 +437,8 @@ class EnsembleAlgorithms:
     def _train_bagging(self, X, y, task_type, **kwargs):
         """训练Bagging集成"""
         n_estimators = kwargs.get('n_estimators', 10)
-        max_samples = kwargs.get('max_samples', 1.0)
-        max_features = kwargs.get('max_features', 1.0)
+        max_samples = float(kwargs.get('max_samples', 1.0))
+        max_features = float(kwargs.get('max_features', 1.0))
         bootstrap = kwargs.get('bootstrap', True)
         bootstrap_features = kwargs.get('bootstrap_features', False)
         base_estimator_type = kwargs.get('base_estimator_type', 'decision_tree')
